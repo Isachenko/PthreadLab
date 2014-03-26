@@ -47,7 +47,44 @@ int main(int argc, char *argv[]) {
         // n = write(sockfd, buffer, strlen(buffer));
         n = send(sockfd, buffer, strlen(buffer), 0);
         if (n < 0) error("ERROR writing to socket");
-
+        printf("[Client] Receiveing file from Server and saving it as final.txt...");
+		char* fr_name = "/home/aryan/Desktop/progetto/final.txt";
+		FILE *fr = fopen(fr_name, "a");
+		if(fr == NULL)
+			printf("File %s Cannot be opened.\n", fr_name);
+		else
+		{
+			bzero(revbuf, LENGTH); 
+			int fr_block_sz = 0;
+		    while((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0)
+		    {
+				int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
+		        if(write_sz < fr_block_sz)
+				{
+		            error("File write failed.\n");
+		        }
+				bzero(revbuf, LENGTH);
+				if (fr_block_sz == 0 || fr_block_sz != 512) 
+				{
+					break;
+				}
+			}
+			if(fr_block_sz < 0)
+	        {
+				if (errno == EAGAIN)
+				{
+					printf("recv() timed out.\n");
+				}
+				else
+				{
+					fprintf(stderr, "recv() failed due to errno = %d\n", errno);
+				}
+			}
+		    printf("Ok received from server!\n");
+		    fclose(fr);
+		}
+		close (sockfd);
+		printf("[Client] Connection lost.\n");
         bzero(buffer, 256);
         // n = read(sockfd, buffer, 255);
         n = recv(sockfd, buffer, 255, 0);

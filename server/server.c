@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,6 +10,7 @@
 
 #define MAX_THREAD_COUNT 5
 #define SOCKET_PORT 2028
+#define LENGTH 512
 
 int curThreadNum = 0;
 pthread_t threads[MAX_THREAD_COUNT];
@@ -36,16 +38,48 @@ void *waitForClient(void* params){
   int newsockfd = (int)params;
   char buffer[256];
 
-  printf("new clien thread created\n");
+  printf("new client thread created\n");
 
   while (1) {
     memset(buffer, 0, sizeof(buffer));
     int n = read(newsockfd, buffer, 255);
-    if (n < 0) error("ERROR reading from socket");
-    printf("Here is the message: %s\n", buffer);
-    n = write(newsockfd, "I got your message", 18);
-    if (n < 0) error("ERROR writing to socket");
+    if (n < 0){
+      char* fs_name = buffer;
+      char sdbuf[LENGTH]; // Send buffer
+      printf("[Server] Sending %s to the Client...", fs_name);
+      FILE *fs = fopen(fs_name, "r");
+      if(fs == NULL)
+      {
+          fprintf(stderr, "ERROR: File %s not found on server. (errno = %d)\n", fs_name, errno);
+      exit(1);
+      }
+
+      bzero(sdbuf, LENGTH); 
+      int fs_block_sz; 
+      while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs))>0)
+      {
+          if(send(nsockfd, sdbuf, fs_block_sz, 0) < 0)
+          {
+              fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", fs_name, errno);
+              exit(1);
+          }
+          bzero(sdbuf, LENGTH);
+      }
+      printf("Ok sent to client!\n");
+      success = 1;
+      close(nsockfd);
+      printf("[Server] Connection with Client closed. Server will wait now...\n");
+      while(waitpid(-1, NULL, WNOHANG) > 0);
+    } 
+    printf("File transfered: %s\n", buffer);
+    n = write(newsockfd, "File transfered", 18);
+    if (n < 0){
+      printf("OI SLOMALOS' (write)\n");
+      if (n < 0) error("ERROR writing to socket");
+    }
   }
+
+  printf("thread is closing\n");
 
   close(newsockfd);
 
