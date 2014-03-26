@@ -32,12 +32,29 @@ void createNewThread(){
     }
 }
 
+void *waitForClient(void* params){
+  int newsockfd = (int)params;
+  char buffer[256];
+
+  printf("new clien thread created\n");
+
+  while (1) {
+    memset(buffer, 0, sizeof(buffer));
+    int n = read(newsockfd, buffer, 255);
+    if (n < 0) error("ERROR reading from socket");
+    printf("Here is the message: %s\n", buffer);
+    n = write(newsockfd, "I got your message", 18);
+    if (n < 0) error("ERROR writing to socket");
+  }
+
+  close(newsockfd);
+
+}
+
 int startServer(){
-    int sockfd, newsockfd, portno;
+    int sockfd, portno;
     socklen_t clilen;
-    char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    int n;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
@@ -51,19 +68,19 @@ int startServer(){
         error("ERROR on binding");
     listen(sockfd, 5);
     clilen = sizeof (cli_addr);
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-    if (newsockfd < 0)
-      error("ERROR on accept");
 
-    while (1) {
-        memset(buffer, 0, sizeof(buffer));
-        n = read(newsockfd, buffer, 255);
-        if (n < 0) error("ERROR reading from socket");
-        printf("Here is the message: %s\n", buffer);
-        n = write(newsockfd, "I got your message", 18);
-        if (n < 0) error("ERROR writing to socket");
+    while(1){
+      int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+      if (newsockfd < 0)
+        error("ERROR on accept");
+      pthread_t clientThread;
+      int rc;
+      if (rc = pthread_create(&clientThread, NULL, waitForClient, (void*)newsockfd)){
+        printf("ERROR; return code from pthread_create() is %d\n", rc);
+        exit(-1);
+      }
     }
-    close(newsockfd);
+
     close(sockfd);
     return 0;
 }
