@@ -57,11 +57,13 @@ int main(int argc, char *argv[]) {
 		bzero(revbuf, LENGTH); 
 		int fr_block_sz = 0;
 	    while((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0) {
+            if (!strcmp(revbuf, "this is the end")){
+                break;
+            }
 			int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
 	        if(write_sz < fr_block_sz) {
 	            error("File write failed.\n");
 	        }
-	        //printf("%s", revbuf);
 			bzero(revbuf, LENGTH);
 			if (fr_block_sz == 0 || fr_block_sz != 512) {
 				break;

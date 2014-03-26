@@ -61,11 +61,17 @@ void *waitForClient(void* params)
       bzero(sdbuf, LENGTH);
     }
     int success = 1;
+    char *endbuf = "this is the end";
+    write(newsockfd, endbuf, sizeof(endbuf));
     printf("[Server] Connection with Client closed. Server will wait now...\n");
+
+    #ifdef PTHREAD
     while(waitpid(-1, NULL, WNOHANG) > 0);
+    #endif
   } 
   printf("thread is closing\n");
   close(newsockfd);
+  printf("thread is closed\n");
 }
 
 int startServer(){
@@ -92,10 +98,19 @@ int startServer(){
       error("ERROR on accept");
     pthread_t clientThread;
     int rc;
-    if (rc = pthread_create(&clientThread, NULL, waitForClient, (void*)newsockfd)){
+    #ifdef PTHREAD
+    rc = pthread_create(&clientThread, NULL, waitForClient, (void*)newsockfd)
+    if (rc){
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
     }
+    #else
+    pid_t childPid = fork();
+    if (childPid == 0){
+      waitForClient((void*)newsockfd);
+      exit(0);
+    }
+    #endif
   }
   close(sockfd);
   return 0;
@@ -105,6 +120,9 @@ int main (int argc, char *argv[])
 {
   startServer();
   /* Last thing that main() should do */
+
+  #ifdef PTHREAD
   pthread_exit(NULL);
+  #endif
 }
 
