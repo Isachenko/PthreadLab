@@ -48,9 +48,8 @@ int main(int argc, char *argv[]) {
     // n = write(sockfd, buffer, strlen(buffer));
     n = send(sockfd, argv[3], strlen(argv[3]), 0);
     if (n < 0) error("ERROR writing to socket");
-    printf("[Client] Receiveing file from Server and saving it as final.txt...");
-	char* fr_name = "/home/isaac/recieve";
-	FILE *fr = fopen(fr_name, "a");
+	char* fr_name = "result";
+	FILE *fr = fopen(fr_name, "wb");
 	if(fr == NULL) {
 		printf("File %s Cannot be opened.\n", fr_name);
 	}
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 	        if(write_sz < fr_block_sz) {
 	            error("File write failed.\n");
 	        }
-	        printf("%s", revbuf);
+	        //printf("%s", revbuf);
 			bzero(revbuf, LENGTH);
 			if (fr_block_sz == 0 || fr_block_sz != 512) {
 				break;
@@ -75,10 +74,8 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "recv() failed due to errno = %d\n", errno);
 			}
 		}
-	    printf("Ok received from server!\n");
 	    fclose(fr);
 	}
-	printf("[Client] Connection lost.\n");
     bzero(buffer, 256);
     close(sockfd);
 

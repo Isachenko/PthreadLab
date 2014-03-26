@@ -54,16 +54,12 @@ void *waitForClient(void* params)
     bzero(sdbuf, LENGTH); 
     int fs_block_sz; 
     while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs))>0) {
-      printf("9 otpravl9u\n");
       if(write(newsockfd, sdbuf, fs_block_sz) < 0) {
           fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", fs_name, errno);
           exit(1);
       }
       bzero(sdbuf, LENGTH);
-      printf("kysok otpravlen\n");
     }
-    printf("size :%d\n", fs_block_sz);
-    printf("Ok sent to client!\n");
     int success = 1;
     printf("[Server] Connection with Client closed. Server will wait now...\n");
     while(waitpid(-1, NULL, WNOHANG) > 0);
