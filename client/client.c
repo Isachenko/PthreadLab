@@ -51,37 +51,27 @@ int main(int argc, char *argv[]) {
     printf("[Client] Receiveing file from Server and saving it as final.txt...");
 	char* fr_name = "/home/isaac/recieve";
 	FILE *fr = fopen(fr_name, "a");
-	if(fr == NULL)
+	if(fr == NULL) {
 		printf("File %s Cannot be opened.\n", fr_name);
-	else
-	{
+	}
+	else {
 		bzero(revbuf, LENGTH); 
 		int fr_block_sz = 0;
-	    while((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0)
-	    {
-	    	printf("9 zawol\n");
+	    while((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0) {
 			int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
-	        if(write_sz < fr_block_sz)
-			{
+	        if(write_sz < fr_block_sz) {
 	            error("File write failed.\n");
 	        }
-	        printf("block: 	%s \n", revbuf);
+	        printf("%s", revbuf);
 			bzero(revbuf, LENGTH);
-			if (fr_block_sz == 0 || fr_block_sz != 512) 
-			{
-				printf("9 yhojy \n" );
+			if (fr_block_sz == 0 || fr_block_sz != 512) {
 				break;
 			}
-			printf("kysok prin9t\n");
 		}
-		if(fr_block_sz < 0)
-        {
-			if (errno == EAGAIN)
-			{
+		if(fr_block_sz < 0) {
+			if (errno == EAGAIN) {
 				printf("recv() timed out.\n");
-			}
-			else
-			{
+			} else {
 				fprintf(stderr, "recv() failed due to errno = %d\n", errno);
 			}
 		}
