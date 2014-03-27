@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char revbuf[LENGTH];
+    char* okAns = "ok";
 
     char buffer[256];
     if (argc < 4) {
@@ -57,7 +58,9 @@ int main(int argc, char *argv[]) {
 		bzero(revbuf, LENGTH); 
 		int fr_block_sz = 0;
 	    while((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0) {
-            if (!strcmp(revbuf, "this is the end")){
+            char* endstr = revbuf;
+            if (0 == strcmp(endstr, "send end")){
+                printf("file recieved\n");
                 break;
             }
 			int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
@@ -65,9 +68,7 @@ int main(int argc, char *argv[]) {
 	            error("File write failed.\n");
 	        }
 			bzero(revbuf, LENGTH);
-			if (fr_block_sz == 0 || fr_block_sz != 512) {
-				break;
-			}
+			write(sockfd, okAns, 2);
 		}
 		if(fr_block_sz < 0) {
 			if (errno == EAGAIN) {

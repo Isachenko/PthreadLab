@@ -12,6 +12,8 @@
 #define SOCKET_PORT 2028
 #define LENGTH 512
 
+#define PTHREAD
+
 int curThreadNum = 0;
 pthread_t threads[MAX_THREAD_COUNT];
 
@@ -39,12 +41,16 @@ void *waitForClient(void* params)
 {
   int newsockfd = (int)params;
   char buffer[256]; 
+  char* endbuf = "send end";
+  char* okAns = "ok";
+  char ansbuf[2];
   printf("new client thread created\n");  
   memset(buffer, 0, sizeof(buffer));
   int n = read(newsockfd, buffer, 255);
   if (n > 0) {
     char* fs_name = buffer;
     char sdbuf[LENGTH]; // Send buffer
+    //char ansbuf[LENGTH]; // answer buffer
     printf("[Server] Sending %s to the Client...", fs_name);
     FILE *fs = fopen(fs_name, "r");
     if(fs == NULL) {
@@ -59,16 +65,22 @@ void *waitForClient(void* params)
           exit(1);
       }
       bzero(sdbuf, LENGTH);
+      if (recv(newsockfd, ansbuf, 2, 0) > 0) {
+        if (!strcmp(ansbuf, okAns)){
+          printf("client no ok\n");
+          break;
+        }
+      }
+      bzero(ansbuf, 2);
     }
     int success = 1;
-    char *endbuf = "this is the end";
-    write(newsockfd, endbuf, sizeof(endbuf));
     printf("[Server] Connection with Client closed. Server will wait now...\n");
 
-    #ifdef PTHREAD
     while(waitpid(-1, NULL, WNOHANG) > 0);
-    #endif
+    
   } 
+  write(newsockfd, endbuf, 8);
+
   printf("thread is closing\n");
   close(newsockfd);
   printf("thread is closed\n");
@@ -99,7 +111,7 @@ int startServer(){
     pthread_t clientThread;
     int rc;
     #ifdef PTHREAD
-    rc = pthread_create(&clientThread, NULL, waitForClient, (void*)newsockfd)
+    rc = pthread_create(&clientThread, NULL, waitForClient, (void*)newsockfd);
     if (rc){
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
